@@ -2,84 +2,54 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#000000">
 <title>오광첩</title>
 <link rel="manifest" href="manifest.json">
 <style>
 :root { --bg:#000; --fg:#f0f0fa; --muted:#888; }
-body { background:var(--bg); color:var(--fg); font-family:system-ui, -apple-system, sans-serif; margin:0; padding:24px 16px; line-height:1.4; letter-spacing:0.02em; }
+body { background:var(--bg); color:var(--fg); font-family:system-ui, sans-serif; margin:0; padding:24px 16px; }
 h1 { font-size:2.2rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; margin:0 0 4px; }
 .sub { color:var(--muted); font-size:0.85rem; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:24px; }
 .card { border:1px solid rgba(240,240,250,0.15); border-radius:4px; padding:20px; margin:16px 0; }
 .card h2 { margin:0 0 12px; font-size:0.9rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); }
 .balls { font-size:1.6rem; letter-spacing:0.15em; font-weight:500; }
-.rank { font-size:0.8rem; letter-spacing:0.1em; color:#fff; background:rgba(240,240,250,0.15); padding:2px 8px; border-radius:2px; margin-left:8px; }
-button { background:transparent; color:var(--fg); border:1px solid rgba(240,240,250,0.4); padding:10px 20px; border-radius:32px; letter-spacing:0.1em; text-transform:uppercase; font-size:0.8rem; }
-.note { font-size:0.8rem; color:var(--muted); margin-top:8px; letter-spacing:0.05em; }
-#result-info { border:1px solid rgba(240,240,250,0.15); padding:16px; margin:16px 0; font-size:0.9rem; letter-spacing:0.05em; }
-.buy-section { margin-top:32px; }
-.buy-section h2 { letter-spacing:0.2em; text-transform:uppercase; font-size:0.9rem; color:var(--muted); }
+.rank { font-size:0.8rem; color:#fff; background:rgba(240,240,250,0.15); padding:2px 8px; margin-left:8px; }
+button { background:transparent; color:var(--fg); border:1px solid rgba(240,240,250,0.4); padding:10px 20px; border-radius:32px; }
 </style>
 </head>
 <body>
 <h1>오광첩</h1>
-<p class="sub" id="sub">SATURDAY 20:35 KST</p>
-<div id="result-info">FETCHING RESULTS...</div>
+<p class="sub">SATURDAY 20:35 KST</p>
+<div id="result-info">Checking...</div>
 
-<div class="card"><h2>달</h2><div class="balls" id="moon">9 11 18 32 39 45</div><div class="note">20:35 MOON POSITION</div></div>
-<div class="card"><h2>우주</h2><div class="balls" id="cosmos">9 11 17 19 30 35</div><div class="note">SIDEREAL / JULIAN</div></div>
-<div class="card"><h2>태양</h2><div class="balls" id="sun">2 6 7 13 14 24</div><div class="note">SOLAR LONGITUDE</div></div>
-<div class="card"><h2>달력</h2><div class="balls" id="cal">1 17 20 21 37 42</div><div class="note">DATE ONLY</div></div>
+<div class="card"><h2>달</h2><div class="balls" id="moon">9 11 18 32 39 45</div></div>
+<div class="card"><h2>우주</h2><div class="balls" id="cosmos">9 11 17 19 30 35</div></div>
+<div class="card"><h2>태양</h2><div class="balls" id="sun">2 6 7 13 14 24</div></div>
+<div class="card"><h2>달력</h2><div class="balls" id="cal">1 17 20 21 37 42</div></div>
 <div class="card"><h2>무작위</h2><div class="balls" id="rand">--</div><button onclick="redraw()">REGENERATE</button></div>
-
-<div class="buy-section">
-<div class="card">
-<h2>무작위 로또 사기 좋은 날</h2>
-<p>10월 15일 (목) 임술일 — 오전 선승<br>10월 17일 (토) 갑자일 — 오전~19시</p>
-<div class="note">손없는 날 없음. 다음 손없는 날 19·20일</div>
-</div>
-<div class="card">
-<h2>연금복권720+ 사기 좋은 날</h2>
-<p>337회 — 10월 15일 (목) 19:05 추첨<br>사기 좋은 날: 15일 오전 (선승)</p>
-<div class="note">목요일 추첨. 판매 17:00까지</div>
-</div>
-</div>
 
 <script>
 const sets = { moon:[9,11,18,32,39,45], cosmos:[9,11,17,19,30,35], sun:[2,6,7,13,14,24], cal:[1,17,20,21,37,42] };
 function getRank(my, win, bonus) {
-  const match = my.filter(n => win.includes(n)).length;
-  if (match === 6) return '1등';
-  if (match === 5 && my.includes(bonus)) return '2등';
-  if (match === 5) return '3등';
-  if (match === 4) return '4등';
-  if (match === 3) return '5등';
-  return '낙첨';
+  const m = my.filter(n => win.includes(n)).length;
+  if (m===6) return '1등'; if (m===5 && my.includes(bonus)) return '2등';
+  if (m===5) return '3등'; if (m===4) return '4등'; if (m===3) return '5등'; return '낙첨';
 }
 async function loadResults() {
   try {
-    const res = await fetch('https://smok95.github.io/lotto/results/latest.json');
-    const data = await res.json();
-    document.getElementById('result-info').innerHTML = `제${data.draw_no}회 ${data.numbers.join(' ')} + ${data.bonus_no}<br>${data.date.slice(0,10)}`;
+    const data = await (await fetch('https://smok95.github.io/lotto/results/latest.json')).json();
+    document.getElementById('result-info').innerHTML = `제${data.draw_no}회 ${data.numbers.join(' ')} + ${data.bonus_no}`;
     for (const [id, nums] of Object.entries(sets)) {
-      const rank = getRank(nums, data.numbers, data.bonus_no);
-      document.getElementById(id).innerHTML = nums.join(' ') + ` <span class="rank">${rank}</span>`;
+      document.getElementById(id).innerHTML = nums.join(' ') + ` <span class="rank">${getRank(nums, data.numbers, data.bonus_no)}</span>`;
     }
-  } catch (e) {
-    document.getElementById('result-info').textContent = 'RESULTS UNAVAILABLE';
-  }
+  } catch(e) {}
 }
 function redraw() {
-  const set = new Set();
-  while (set.size < 6) set.add((crypto.getRandomValues(new Uint32Array(1))[0] % 45) + 1);
-  document.getElementById('rand').textContent = Array.from(set).sort((a,b)=>a-b).join(' ');
+  const s=new Set(); while(s.size<6) s.add((crypto.getRandomValues(new Uint32Array(1))[0]%45)+1);
+  document.getElementById('rand').textContent = Array.from(s).sort((a,b)=>a-b).join(' ');
 }
-const now = new Date();
-if (now.getDay() === 0) document.getElementById('sub').textContent = 'NEXT SATURDAY';
-redraw();
-loadResults();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+redraw(); loadResults();
 </script>
 </body>
 </html>
