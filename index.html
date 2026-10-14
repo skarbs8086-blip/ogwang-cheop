@@ -15,37 +15,61 @@ h1 { font-size:1.8rem; margin:0 0 8px; }
 .card h2 { margin:0 0 8px; font-size:1.1rem; }
 .balls { font-size:1.3rem; letter-spacing:0.05em; font-weight:500; }
 .ball { display:inline-block; width:38px; height:38px; line-height:38px; text-align:center; background:var(--ink); color:var(--cream); border-radius:50%; margin:3px; font-size:0.95rem; }
+.rank { color:#c0392b; font-weight:bold; margin-left:8px; }
 button { background:var(--gold); color:var(--ink); border:none; padding:10px 16px; border-radius:10px; font-size:0.95rem; cursor:pointer; }
 button:active { transform:scale(0.97); }
 .note { font-size:0.85rem; color:#666; margin-top:8px; }
+#result-info { background:#fff8e1; padding:12px; border-radius:8px; margin:12px 0; }
 </style>
 </head>
 <body>
 <h1>오광첩</h1>
-<p class="sub">그 주 토요일 20시 35분 기준 로또 6/45</p>
+<p class="sub" id="sub">그 주 토요일 20:35 기준 로또 6/45</p>
+<div id="result-info">당첨 번호 확인 중...</div>
 
-<div class="card"><h2>달</h2><div class="balls" id="moon">9 11 18 32 39 45</div><div class="note">20:35 달 위치·조도·분위 기준</div></div>
+<div class="card"><h2>달</h2><div class="balls" id="moon">9 11 18 32 39 45</div><div class="note">20:35 달 위치·조도 기준</div></div>
 <div class="card"><h2>우주</h2><div class="balls" id="cosmos">9 11 17 19 30 35</div><div class="note">율리우스일·시드리얼 기준</div></div>
 <div class="card"><h2>태양</h2><div class="balls" id="sun">2 6 7 13 14 24</div><div class="note">태양 경도·일출 기준</div></div>
 <div class="card"><h2>달력</h2><div class="balls" id="cal">1 17 20 21 37 42</div><div class="note">그 토요일 날짜·일진만 사용</div></div>
 <div class="card"><h2>무작위</h2><div class="balls" id="rand">--</div><button onclick="redraw()">다시 뽑기</button><div class="note">진짜 암호 난수. 다시 누르면 바뀝니다.</div></div>
 
-<div class="card">
-<h2>무작위 로또 사기 나은 날</h2>
-<p>이번 창에 손없는 날 없음. 다음 손없는 날 19·20일.</p>
-<p>· 10월 15일 (목) 임술일 — 선승, 오전 나음<br>· 10월 17일 (토) 갑자일 — 대길 일진, 오전~19시 사이</p>
-</div>
-
-<div class="card">
-<h2>연금복권720+ 337회</h2>
-<p>10월 15일 (목) 19:05 추첨. 판매 17:00까지.</p>
-<p>무작위 사기 나은 날: 15일 오전 (선승)</p>
-</div>
-
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+const sets = {
+  moon: [9,11,18,32,39,45],
+  cosmos: [9,11,17,19,30,35],
+  sun: [2,6,7,13,14,24],
+  cal: [1,17,20,21,37,42]
+};
+
+function getRank(my, win, bonus) {
+  const match = my.filter(n => win.includes(n)).length;
+  if (match === 6) return '1등';
+  if (match === 5 && my.includes(bonus)) return '2등';
+  if (match === 5) return '3등';
+  if (match === 4) return '4등';
+  if (match === 3) return '5등';
+  return '낙첨';
 }
+
+async function loadResults() {
+  try {
+    const res = await fetch('https://smok95.github.io/lotto/results/latest.json');
+    const data = await res.json();
+    const win = data.numbers;
+    const bonus = data.bonus_no;
+    const info = document.getElementById('result-info');
+    info.innerHTML = `제${data.draw_no}회 당첨번호: ${win.join(' ')} + ${bonus}<br>추첨일: ${data.date.slice(0,10)}`;
+    
+    for (const [id, nums] of Object.entries(sets)) {
+      const el = document.getElementById(id);
+      const rank = getRank(nums, win, bonus);
+      el.innerHTML = nums.join(' ') + ` <span class="rank">${rank}</span>`;
+    }
+  } catch (e) {
+    document.getElementById('result-info').textContent = '당첨 번호를 가져오지 못했습니다.';
+  }
+}
+
 function redraw() {
   const set = new Set();
   while (set.size < 6) {
@@ -55,7 +79,16 @@ function redraw() {
   const arr = Array.from(set).sort((a,b)=>a-b);
   document.getElementById('rand').textContent = arr.join(' ');
 }
+
+// Simple Sunday next-draw note
+const now = new Date();
+if (now.getDay() === 0) { // Sunday
+  document.getElementById('sub').textContent = '일요일 - 다음 주 토요일 회차 번호 기준';
+}
+
 redraw();
+loadResults();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
